@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Sebrae App",
+    "slug": "sebrae-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "sebraeapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": { "supportsTablet": true },
+    "android": { "adaptiveIcon": { "backgroundColor": "#ffffff" } },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": { "typedRoutes": true }
+  }
+}
