@@ -39,22 +39,24 @@ src/
 ## Padrão de feature
 
 ### `[domain].schema.ts` — schemas Zod
+
 - Define `XSchema`, `CreateXSchema`, `UpdateXSchema`, `ListXQuerySchema`.
 - Exporta tipos via `z.infer`.
 - **Mantém uma cópia equivalente em `apps/mobile/src/features/[domain]/schemas/`.** Atualize ambos lados juntos.
 
 ### `[domain].handler.ts` — entrada
+
 - Apenas `onCall`/`onRequest`/`onDocumentWritten`.
 - Valida input com schema Zod local.
 - Extrai auth via `requireAuth(request)`.
 - Chama `service`, formata resposta, traduz erros.
 
 ```typescript
-import { onCall } from 'firebase-functions/v2/https';
-import { CreateClientSchema } from './clients.schema';
-import { requireAuth } from '../../lib/auth';
-import { handleError } from '../../lib/errors';
-import * as clientService from './clients.service';
+import { onCall } from "firebase-functions/v2/https";
+import { CreateClientSchema } from "./clients.schema";
+import { requireAuth } from "../../firebase/auth";
+import { handleError } from "../../firebase/errors";
+import * as clientService from "./clients.service";
 
 export const createClient = onCall(async (request) => {
   try {
@@ -68,11 +70,13 @@ export const createClient = onCall(async (request) => {
 ```
 
 ### `[domain].service.ts` — lógica de negócio
+
 - Funções puras de regra de negócio.
 - Chama repository diretamente (sem interface).
 - Lança `AppError` com código + mensagem em português.
 
 ### `[domain].repository.ts` — persistência
+
 - Funções tipadas que falam direto com Firestore.
 - Sem ORM, sem QueryBuilder customizado, sem interface.
 - Tipos importados de `./[domain].schema`.
@@ -92,8 +96,8 @@ export const createClient = onCall(async (request) => {
 - Wrapper em `lib/secrets.ts`.
 
 ```typescript
-import { defineSecret } from 'firebase-functions/params';
-export const STRIPE_KEY = defineSecret('STRIPE_KEY');
+import { defineSecret } from "firebase-functions/params";
+export const STRIPE_KEY = defineSecret("STRIPE_KEY");
 ```
 
 ---
@@ -146,5 +150,6 @@ Falha em qualquer um = task não está pronta.
 ## Sincronia com mobile
 
 Schemas Zod são **duplicados** entre backend e mobile (sem package compartilhado). Ao mudar um schema aqui:
+
 1. Atualize `apps/mobile/src/features/[domain]/schemas/[domain].schema.ts` com o mesmo conteúdo.
 2. Rode `npm run sensor` em ambos os apps.

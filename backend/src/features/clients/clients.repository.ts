@@ -1,36 +1,42 @@
-import { db } from '../../lib2/firestore';
-import type { Client, CreateClientInput, ListClientsQuery } from './clients.schema';
+import { db } from "../../firebase/firestore";
+import type {
+  Client,
+  CreateClientInput,
+  ListClientsQuery,
+} from "./clients.schema";
 
-const COLLECTION = 'clients';
+const COLLECTION = "clients";
 
 export async function findById(id: string): Promise<Client | null> {
   const snap = await db.collection(COLLECTION).doc(id).get();
   if (!snap.exists) return null;
-  return { id: snap.id, ...(snap.data() as Omit<Client, 'id'>) };
+  return { id: snap.id, ...(snap.data() as Omit<Client, "id">) };
 }
 
 export async function findByDocument(document: string): Promise<Client | null> {
   const snap = await db
     .collection(COLLECTION)
-    .where('document', '==', document)
+    .where("document", "==", document)
     .limit(1)
     .get();
   if (snap.empty) return null;
   const doc = snap.docs[0]!;
-  return { id: doc.id, ...(doc.data() as Omit<Client, 'id'>) };
+  return { id: doc.id, ...(doc.data() as Omit<Client, "id">) };
 }
 
-export async function list(query: ListClientsQuery): Promise<{ items: Client[]; total: number }> {
+export async function list(
+  query: ListClientsQuery,
+): Promise<{ items: Client[]; total: number }> {
   let ref: FirebaseFirestore.Query = db.collection(COLLECTION);
   if (query.isActive !== undefined) {
-    ref = ref.where('isActive', '==', query.isActive);
+    ref = ref.where("isActive", "==", query.isActive);
   }
 
   if (query.search) {
-    const snap = await ref.orderBy('createdAt', 'desc').get();
+    const snap = await ref.orderBy("createdAt", "desc").get();
     const term = query.search.toLowerCase();
     const filtered = snap.docs
-      .map((d) => ({ id: d.id, ...(d.data() as Omit<Client, 'id'>) }))
+      .map((d) => ({ id: d.id, ...(d.data() as Omit<Client, "id">) }))
       .filter(
         (c) =>
           c.name.toLowerCase().includes(term) ||
@@ -46,9 +52,16 @@ export async function list(query: ListClientsQuery): Promise<{ items: Client[]; 
   const total = totalSnap.data().count;
 
   const offset = (query.page - 1) * query.pageSize;
-  const pageSnap = await ref.orderBy('createdAt', 'desc').offset(offset).limit(query.pageSize).get();
+  const pageSnap = await ref
+    .orderBy("createdAt", "desc")
+    .offset(offset)
+    .limit(query.pageSize)
+    .get();
 
-  const items = pageSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Client, 'id'>) }));
+  const items = pageSnap.docs.map((d) => ({
+    id: d.id,
+    ...(d.data() as Omit<Client, "id">),
+  }));
   return { items, total };
 }
 
@@ -79,7 +92,10 @@ export async function create(
   return { id: ref.id, ...data };
 }
 
-export async function update(id: string, input: Partial<CreateClientInput>): Promise<void> {
+export async function update(
+  id: string,
+  input: Partial<CreateClientInput>,
+): Promise<void> {
   await db.collection(COLLECTION).doc(id).update(input);
 }
 
