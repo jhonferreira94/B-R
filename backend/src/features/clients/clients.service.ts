@@ -1,13 +1,15 @@
-import * as repo from './clients.repository';
-import { AppError } from '../../lib2/errors';
-import type { AuthContext } from '../../lib2/auth';
+import * as repo from "./clients.repository";
+import { AppError } from "../../firebase/errors";
+import type { AuthContext } from "../../firebase/auth";
 import type {
   CreateClientInput,
   ListClientsQuery,
   ListClientsResponse,
-} from './clients.schema';
+} from "./clients.schema";
 
-export async function list(query: ListClientsQuery): Promise<ListClientsResponse> {
+export async function list(
+  query: ListClientsQuery,
+): Promise<ListClientsResponse> {
   const { items, total } = await repo.list(query);
   const pageCount = Math.ceil(total / query.pageSize) || 1;
   return {
@@ -26,49 +28,101 @@ export async function list(query: ListClientsQuery): Promise<ListClientsResponse
 export async function create(input: CreateClientInput, auth: AuthContext) {
   const exists = await repo.findByDocument(input.document);
   if (exists) {
-    throw new AppError('CLIENT_DUPLICATED', 'Já existe um cliente com este documento', {
-      document: ['Documento já cadastrado'],
-    });
+    throw new AppError(
+      "CLIENT_DUPLICATED",
+      "Já existe um cliente com este documento",
+      {
+        document: ["Documento já cadastrado"],
+      },
+    );
   }
   return repo.create({ ...input, createdBy: auth.uid });
 }
 
 export async function update(id: string, input: Partial<CreateClientInput>) {
   const current = await repo.findById(id);
-  if (!current) throw new AppError('CLIENT_NOT_FOUND', 'Cliente não encontrado');
+  if (!current)
+    throw new AppError("CLIENT_NOT_FOUND", "Cliente não encontrado");
   await repo.update(id, input);
 }
 
 export async function remove(id: string) {
   const current = await repo.findById(id);
-  if (!current) throw new AppError('CLIENT_NOT_FOUND', 'Cliente não encontrado');
+  if (!current)
+    throw new AppError("CLIENT_NOT_FOUND", "Cliente não encontrado");
   await repo.remove(id);
 }
 
 const FIRST_NAMES = [
-  'Ana', 'Bruno', 'Carla', 'Daniel', 'Eduarda', 'Felipe', 'Gabriela', 'Henrique',
-  'Isabela', 'João', 'Karen', 'Lucas', 'Mariana', 'Nicolas', 'Olivia', 'Pedro',
-  'Quezia', 'Rafael', 'Sofia', 'Thiago', 'Ursula', 'Vinicius', 'Wesley', 'Yasmin',
-  'Beatriz', 'Caio', 'Diana', 'Eric', 'Fernanda', 'Gustavo',
+  "Ana",
+  "Bruno",
+  "Carla",
+  "Daniel",
+  "Eduarda",
+  "Felipe",
+  "Gabriela",
+  "Henrique",
+  "Isabela",
+  "João",
+  "Karen",
+  "Lucas",
+  "Mariana",
+  "Nicolas",
+  "Olivia",
+  "Pedro",
+  "Quezia",
+  "Rafael",
+  "Sofia",
+  "Thiago",
+  "Ursula",
+  "Vinicius",
+  "Wesley",
+  "Yasmin",
+  "Beatriz",
+  "Caio",
+  "Diana",
+  "Eric",
+  "Fernanda",
+  "Gustavo",
 ];
 const LAST_NAMES = [
-  'Silva', 'Souza', 'Oliveira', 'Santos', 'Lima', 'Pereira', 'Costa', 'Almeida',
-  'Ferreira', 'Rodrigues', 'Carvalho', 'Gomes', 'Martins', 'Araujo', 'Rocha',
-  'Ribeiro', 'Barbosa', 'Mendes', 'Nogueira', 'Cardoso',
+  "Silva",
+  "Souza",
+  "Oliveira",
+  "Santos",
+  "Lima",
+  "Pereira",
+  "Costa",
+  "Almeida",
+  "Ferreira",
+  "Rodrigues",
+  "Carvalho",
+  "Gomes",
+  "Martins",
+  "Araujo",
+  "Rocha",
+  "Ribeiro",
+  "Barbosa",
+  "Mendes",
+  "Nogueira",
+  "Cardoso",
 ];
 
 function pseudoCpf(seed: number): string {
-  const base = String(seed).padStart(11, '0').slice(-11);
+  const base = String(seed).padStart(11, "0").slice(-11);
   return `${base.slice(0, 3)}.${base.slice(3, 6)}.${base.slice(6, 9)}-${base.slice(9)}`;
 }
 
 function pseudoPhone(seed: number): string {
   const ddd = 11 + (seed % 80);
-  const tail = String(900000000 + (seed * 7919) % 100000000).slice(-9);
+  const tail = String(900000000 + ((seed * 7919) % 100000000)).slice(-9);
   return `(${ddd}) ${tail.slice(0, 5)}-${tail.slice(5)}`;
 }
 
-export async function seed(auth: AuthContext, total = 50): Promise<{ created: number; skipped: boolean }> {
+export async function seed(
+  auth: AuthContext,
+  total = 50,
+): Promise<{ created: number; skipped: boolean }> {
   const existing = await repo.count();
   if (existing > 0) return { created: 0, skipped: true };
 

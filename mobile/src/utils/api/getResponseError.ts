@@ -9,14 +9,20 @@ export interface ResponseError<T = unknown> {
 
 /**
  * Extrai o payload de erro padronizado das respostas da API.
- * Compatível com `handleError` do backend (apps/functions/src/lib/errors.ts).
+ * Compatível com `handleError` do backend (apps/functions/src/firebase/errors.ts).
  */
-export function getResponseError<T = unknown>(error: unknown): ResponseError<T> {
+export function getResponseError<T = unknown>(
+  error: unknown,
+): ResponseError<T> {
   // Erros de Firebase Functions Callable vêm em error.details
-  const anyErr = error as { details?: ResponseError<T>; response?: { data?: ResponseError<T> }; message?: string };
+  const anyErr = error as {
+    details?: ResponseError<T>;
+    response?: { data?: ResponseError<T> };
+    message?: string;
+  };
   if (anyErr?.details) return anyErr.details;
   if (anyErr?.response?.data) return anyErr.response.data;
-  return { message: anyErr?.message ?? 'Erro inesperado' };
+  return { message: anyErr?.message ?? "Erro inesperado" };
 }
 
 export function hasFieldErrors(error: unknown): boolean {
@@ -39,7 +45,7 @@ export function handleFieldErrors<T extends Record<string, unknown>>(
   if (!err.fieldErrors) return;
   for (const [field, messages] of Object.entries(err.fieldErrors)) {
     if (Array.isArray(messages) && messages.length > 0) {
-      setError(field as keyof T, { type: 'server', message: messages[0]! });
+      setError(field as keyof T, { type: "server", message: messages[0]! });
     }
   }
 }

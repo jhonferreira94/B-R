@@ -1,15 +1,15 @@
-import { onCall } from 'firebase-functions/v2/https';
-import { z } from 'zod';
+import { onCall } from "firebase-functions/v2/https";
+import { z } from "zod";
 import {
   CreateClientSchema,
   UpdateClientSchema,
   ListClientsQuerySchema,
-} from './clients.schema';
-import { requireAuth } from '../../lib2/auth';
-import { handleError } from '../../lib2/errors';
-import * as service from './clients.service';
+} from "./clients.schema";
+import { requireAuth } from "../../firebase/auth";
+import { handleError } from "../../firebase/errors";
+import * as service from "./clients.service";
 
-const region = 'southamerica-east1';
+const region = "southamerica-east1";
 
 export const listClients = onCall({ region }, async (request) => {
   try {

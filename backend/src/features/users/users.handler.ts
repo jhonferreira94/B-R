@@ -1,8 +1,8 @@
-import { onCall } from 'firebase-functions/v2/https';
-import { handleError } from '../../lib2/errors';
-import * as service from './users.service';
+import { onCall } from "firebase-functions/v2/https";
+import { handleError } from "../../firebase/errors";
+import * as service from "./users.service";
 
-const region = 'southamerica-east1';
+const region = "southamerica-east1";
 
 export const seedAdmin = onCall({ region }, async () => {
   try {
