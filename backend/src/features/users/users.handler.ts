@@ -1,5 +1,5 @@
 import { onCall } from 'firebase-functions/v2/https';
-import { handleError } from '../../lib/errors';
+import { handleError } from '../../lib2/errors';
 import * as service from './users.service';
 
 const region = 'southamerica-east1';

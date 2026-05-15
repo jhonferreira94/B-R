@@ -1,6 +1,6 @@
 import * as repo from './clients.repository';
-import { AppError } from '../../lib/errors';
-import type { AuthContext } from '../../lib/auth';
+import { AppError } from '../../lib2/errors';
+import type { AuthContext } from '../../lib2/auth';
 import type {
   CreateClientInput,
   ListClientsQuery,

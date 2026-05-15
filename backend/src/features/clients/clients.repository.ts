@@ -1,4 +1,4 @@
-import { db } from '../../lib/firestore';
+import { db } from '../../lib2/firestore';
 import type { Client, CreateClientInput, ListClientsQuery } from './clients.schema';
 
 const COLLECTION = 'clients';

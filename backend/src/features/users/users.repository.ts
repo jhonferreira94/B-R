@@ -1,4 +1,4 @@
-import { db } from '../../lib/firestore';
+import { db } from '../../lib2/firestore';
 import type { User } from './users.schema';
 
 const COLLECTION = 'users';

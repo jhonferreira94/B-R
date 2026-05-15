@@ -5,8 +5,8 @@ import {
   UpdateClientSchema,
   ListClientsQuerySchema,
 } from './clients.schema';
-import { requireAuth } from '../../lib/auth';
-import { handleError } from '../../lib/errors';
+import { requireAuth } from '../../lib2/auth';
+import { handleError } from '../../lib2/errors';
 import * as service from './clients.service';
 
 const region = 'southamerica-east1';
