@@ -1,13 +1,32 @@
-import { onCall } from 'firebase-functions/v2/https';
+import { createHash, timingSafeEqual } from 'node:crypto';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { z } from 'zod';
 import { handleError } from '../../lib2/errors';
+import { CALL_OPTIONS } from '../../lib2/options';
+import { ADMIN_PASSWORD, SEED_KEY } from '../../lib2/secrets';
 import * as service from './users.service';
 
-const region = 'southamerica-east1';
-
-export const seedAdmin = onCall({ region }, async () => {
-  try {
-    return await service.seedAdmin();
-  } catch (err) {
-    throw handleError(err);
-  }
+const SeedAdminPayloadSchema = z.object({
+  seedKey: z.string().min(1, { message: 'seedKey é obrigatório' }),
 });
+
+function safeEqual(a: string, b: string): boolean {
+  const hashA = createHash('sha256').update(a).digest();
+  const hashB = createHash('sha256').update(b).digest();
+  return timingSafeEqual(hashA, hashB);
+}
+
+export const seedAdmin = onCall(
+  { ...CALL_OPTIONS, secrets: [SEED_KEY, ADMIN_PASSWORD] },
+  async (request) => {
+    try {
+      const { seedKey } = SeedAdminPayloadSchema.parse(request.data ?? {});
+      if (!safeEqual(seedKey, SEED_KEY.value())) {
+        throw new HttpsError('permission-denied', 'Chave de seed inválida');
+      }
+      return await service.seedAdmin(ADMIN_PASSWORD.value());
+    } catch (err) {
+      throw handleError(err);
+    }
+  },
+);

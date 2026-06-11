@@ -2,22 +2,20 @@ import { db } from '../../lib2/firestore';
 import type { Client, CreateClientInput, ListClientsQuery } from './clients.schema';
 
 const COLLECTION = 'clients';
+const BATCH_LIMIT = 500;
+
+type ClientDoc = Omit<Client, 'id'> & { nameLowercase?: string };
+
+function toClient(id: string, raw: FirebaseFirestore.DocumentData): Client {
+  const data = { ...(raw as ClientDoc) };
+  delete data.nameLowercase;
+  return { id, ...data };
+}
 
 export async function findById(id: string): Promise<Client | null> {
   const snap = await db.collection(COLLECTION).doc(id).get();
   if (!snap.exists) return null;
-  return { id: snap.id, ...(snap.data() as Omit<Client, 'id'>) };
-}
-
-export async function findByDocument(document: string): Promise<Client | null> {
-  const snap = await db
-    .collection(COLLECTION)
-    .where('document', '==', document)
-    .limit(1)
-    .get();
-  if (snap.empty) return null;
-  const doc = snap.docs[0]!;
-  return { id: doc.id, ...(doc.data() as Omit<Client, 'id'>) };
+  return toClient(snap.id, snap.data()!);
 }
 
 export async function list(query: ListClientsQuery): Promise<{ items: Client[]; total: number }> {
@@ -27,28 +25,22 @@ export async function list(query: ListClientsQuery): Promise<{ items: Client[]; 
   }
 
   if (query.search) {
-    const snap = await ref.orderBy('createdAt', 'desc').get();
     const term = query.search.toLowerCase();
-    const filtered = snap.docs
-      .map((d) => ({ id: d.id, ...(d.data() as Omit<Client, 'id'>) }))
-      .filter(
-        (c) =>
-          c.name.toLowerCase().includes(term) ||
-          c.email.toLowerCase().includes(term) ||
-          c.document.toLowerCase().includes(term),
-      );
-    const offset = (query.page - 1) * query.pageSize;
-    const items = filtered.slice(offset, offset + query.pageSize);
-    return { items, total: filtered.length };
+    ref = ref
+      .where('nameLowercase', '>=', term)
+      .where('nameLowercase', '<=', `${term}\uf8ff`)
+      .orderBy('nameLowercase');
+  } else {
+    ref = ref.orderBy('createdAt', 'desc');
   }
 
   const totalSnap = await ref.count().get();
   const total = totalSnap.data().count;
 
   const offset = (query.page - 1) * query.pageSize;
-  const pageSnap = await ref.orderBy('createdAt', 'desc').offset(offset).limit(query.pageSize).get();
+  const pageSnap = await ref.offset(offset).limit(query.pageSize).get();
 
-  const items = pageSnap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Client, 'id'>) }));
+  const items = pageSnap.docs.map((d) => toClient(d.id, d.data()));
   return { items, total };
 }
 
@@ -60,27 +52,72 @@ export async function count(): Promise<number> {
 export async function bulkCreate(
   inputs: Array<CreateClientInput & { createdBy: string }>,
 ): Promise<number> {
-  const batch = db.batch();
   const now = Date.now();
-  for (const input of inputs) {
-    const ref = db.collection(COLLECTION).doc();
-    batch.set(ref, { ...input, isActive: true, createdAt: now });
+  for (let i = 0; i < inputs.length; i += BATCH_LIMIT) {
+    const batch = db.batch();
+    for (const input of inputs.slice(i, i + BATCH_LIMIT)) {
+      const ref = db.collection(COLLECTION).doc();
+      batch.set(ref, {
+        ...input,
+        nameLowercase: input.name.toLowerCase(),
+        isActive: true,
+        createdAt: now,
+      });
+    }
+    await batch.commit();
   }
-  await batch.commit();
   return inputs.length;
 }
 
 export async function create(
   input: CreateClientInput & { createdBy: string },
-): Promise<Client> {
+): Promise<Client | null> {
   const now = Date.now();
-  const data = { ...input, isActive: true, createdAt: now };
-  const ref = await db.collection(COLLECTION).add(data);
-  return { id: ref.id, ...data };
+  const data = {
+    ...input,
+    nameLowercase: input.name.toLowerCase(),
+    isActive: true,
+    createdAt: now,
+  };
+  const ref = db.collection(COLLECTION).doc();
+
+  const created = await db.runTransaction(async (t) => {
+    const dup = await t.get(
+      db.collection(COLLECTION).where('document', '==', input.document).limit(1),
+    );
+    if (!dup.empty) return false;
+    t.set(ref, data);
+    return true;
+  });
+
+  if (!created) return null;
+  return toClient(ref.id, data);
 }
 
-export async function update(id: string, input: Partial<CreateClientInput>): Promise<void> {
-  await db.collection(COLLECTION).doc(id).update(input);
+export type UpdateResult = 'updated' | 'not_found' | 'duplicated';
+
+export async function update(
+  id: string,
+  input: Partial<CreateClientInput>,
+): Promise<UpdateResult> {
+  const ref = db.collection(COLLECTION).doc(id);
+
+  return db.runTransaction(async (t) => {
+    const snap = await t.get(ref);
+    if (!snap.exists) return 'not_found';
+
+    if (input.document) {
+      const dup = await t.get(
+        db.collection(COLLECTION).where('document', '==', input.document).limit(1),
+      );
+      if (!dup.empty && dup.docs[0]!.id !== id) return 'duplicated';
+    }
+
+    const patch: Record<string, unknown> = { ...input };
+    if (input.name) patch.nameLowercase = input.name.toLowerCase();
+    t.update(ref, patch);
+    return 'updated';
+  });
 }
 
 export async function remove(id: string): Promise<void> {

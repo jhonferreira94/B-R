@@ -38,11 +38,11 @@ export default function SignUpScreen() {
     resolver: zodResolver(SignUpSchema),
     mode: 'onChange',
     defaultValues: {
-      name: 'user',
-      email: 'user@email.com',
-      cpf: '012.345.678-90',
-      password: 'sebrae@123',
-      confirmPassword: 'sebrae@123',
+      name: '',
+      email: '',
+      cpf: '',
+      password: '',
+      confirmPassword: '',
     },
   });
 
@@ -76,10 +76,7 @@ export default function SignUpScreen() {
     );
   }
 
-  const isPending = false;
-
-  return (
-    <SafeAreaView className="flex-1 px-4">
+  return (    <SafeAreaView className="flex-1 px-4">
       <Leading />
 
       <KeyboardAvoidingView
@@ -174,8 +171,7 @@ export default function SignUpScreen() {
       <View className="gap-3 mt-3 pb-2">
         <Button
           labelText="Confirmar cadastro"
-          isDisabled={isPending || !isValid}
-          isLoading={isPending}
+          isDisabled={!isValid}
           onPress={handleSubmit(onSubmit)}
         />
 
@@ -183,7 +179,6 @@ export default function SignUpScreen() {
           labelText="Cancelar"
           classNameButtonText="text-primary-600 font-medium"
           variant="link"
-          isDisabled={isPending}
           onPress={() => router.push('/login')}
         />
       </View>

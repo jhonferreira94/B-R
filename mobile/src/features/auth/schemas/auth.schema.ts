@@ -1,5 +1,17 @@
 import { z } from 'zod';
 
+function isValidCpf(value: string): boolean {
+  const digits = value.replace(/\D/g, '');
+  if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
+  for (const factor of [10, 11]) {
+    let sum = 0;
+    for (let i = 0; i < factor - 1; i++) sum += Number(digits[i]) * (factor - i);
+    const check = ((sum * 10) % 11) % 10;
+    if (check !== Number(digits[factor - 1])) return false;
+  }
+  return true;
+}
+
 export const SignInSchema = z.object({
   email: z.string().email({ message: 'E-mail inválido' }),
   password: z.string().min(1, { message: 'Senha obrigatória' }),
@@ -10,7 +22,7 @@ export type SignInFormData = z.infer<typeof SignInSchema>;
 export const SignUpSchema = z
   .object({
     name: z.string().min(1, { message: 'Nome obrigatório' }),
-    cpf: z.string().min(14, { message: 'CPF inválido' }),
+    cpf: z.string().refine(isValidCpf, { message: 'CPF inválido' }),
     email: z.string().email({ message: 'E-mail inválido' }),
     password: z.string().min(8, { message: 'Mínimo de 8 caracteres' }),
     confirmPassword: z.string().min(1, { message: 'Confirme a senha' }),

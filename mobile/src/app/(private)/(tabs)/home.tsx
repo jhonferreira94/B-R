@@ -3,6 +3,8 @@ import { ActivityIndicator, FlatList, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useClientsInfinite, useSeedClients } from '@/features/clients';
 import { useAuth } from '@/providers/AuthProvider';
+import { hasPermission } from '@/utils/hasPermission';
+import { KnownClaims } from '@/constants/routes';
 import { useDebounce } from '@/hooks/useDebounce';
 import { SearchInput } from '@/components/forms/search-input';
 import { Box } from '@/components/ui/box';
@@ -33,6 +35,7 @@ export default function HomeScreen() {
   } = useClientsInfinite({ search: debouncedSearch || undefined, pageSize: 10 });
 
   const seedClients = useSeedClients();
+  const canSeed = hasPermission(session?.user, [KnownClaims.create_clients]);
 
   const items: Client[] = useMemo(
     () => data?.pages.flatMap((p) => p.items) ?? [],
@@ -119,7 +122,7 @@ export default function HomeScreen() {
                     ? 'Nenhum cliente encontrado para essa busca.'
                     : 'Nenhum cliente cadastrado ainda.'}
                 </Text>
-                {!debouncedSearch && (
+                {!debouncedSearch && canSeed && (
                   <Button
                     labelText="Gerar clientes de exemplo"
                     buttonSize="md"

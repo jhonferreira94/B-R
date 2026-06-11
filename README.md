@@ -48,6 +48,24 @@ No console do Firebase, habilite:
 - **Firestore Database** (modo nativo, região `southamerica-east1` recomendada)
 - **Blaze plan** (necessário para Functions v2)
 
+### Configurar secrets
+
+O `seedAdmin` exige dois secrets: `SEED_KEY` (chave que autoriza o seed) e `ADMIN_PASSWORD` (senha do admin criado).
+
+**Produção:**
+
+```bash
+firebase functions:secrets:set SEED_KEY
+firebase functions:secrets:set ADMIN_PASSWORD
+```
+
+**Emulator:** os valores ficam em `backend/.secret.local` (não versionado):
+
+```env
+SEED_KEY=local-dev-seed-key
+ADMIN_PASSWORD=admin-local-123
+```
+
 ### Rodar o emulator local
 
 ```bash
@@ -62,11 +80,12 @@ Levanta Functions + Firestore + Auth. UI em http://127.0.0.1:4000.
 
 ```bash
 npm run deploy
+firebase deploy --only firestore:indexes,firestore:rules
 ```
 
 ### Criar o usuário admin (seed)
 
-Com o backend deployado (ou rodando local), chame o callable `seedAdmin`. Ele cria `admin@sebrae.com` / `sebrae@123` no Auth e grava o usuário no Firestore com claims completas.
+Com o backend deployado (ou rodando local), chame o callable `seedAdmin` passando o `seedKey`. Ele cria `admin@sebrae.com` no Auth (com a senha do secret `ADMIN_PASSWORD`) e grava o usuário no Firestore com claims completas. A senha **não** é retornada na resposta.
 
 **Produção** (PowerShell):
 
@@ -74,7 +93,7 @@ Com o backend deployado (ou rodando local), chame o callable `seedAdmin`. Ele cr
 Invoke-RestMethod -Method POST `
   -Uri "https://southamerica-east1-SEU_PROJECT_ID.cloudfunctions.net/seedAdmin" `
   -ContentType "application/json" `
-  -Body '{"data":{}}'
+  -Body '{"data":{"seedKey":"VALOR_DO_SEED_KEY"}}'
 ```
 
 **Emulator**:
@@ -83,7 +102,7 @@ Invoke-RestMethod -Method POST `
 Invoke-RestMethod -Method POST `
   -Uri "http://127.0.0.1:5001/SEU_PROJECT_ID/southamerica-east1/seedAdmin" `
   -ContentType "application/json" `
-  -Body '{"data":{}}'
+  -Body '{"data":{"seedKey":"local-dev-seed-key"}}'
 ```
 
 ---
@@ -106,10 +125,6 @@ cp .env.example .env
 Preencha com as credenciais do seu projeto Firebase (Console → Configurações do projeto → Apps Web):
 
 ```env
-EXPO_PUBLIC_API_URL=https://southamerica-east1-SEU_PROJECT_ID.cloudfunctions.net
-EXPO_PUBLIC_APP_NAME=Sebrae App
-EXPO_PUBLIC_APP_LANGUAGE=pt-BR
-
 EXPO_PUBLIC_FIREBASE_API_KEY=...
 EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=SEU_PROJECT_ID.firebaseapp.com
 EXPO_PUBLIC_FIREBASE_PROJECT_ID=SEU_PROJECT_ID
@@ -147,7 +162,7 @@ npm run ios
 
 ### Login
 
-Use o admin do seed: `admin@sebrae.com` / `sebrae@123`.
+Use o admin do seed: `admin@sebrae.com` com a senha configurada no secret `ADMIN_PASSWORD` (no emulator, o valor de `backend/.secret.local`).
 
 ---
 
@@ -171,10 +186,12 @@ backend/src/
   features/
     clients/        # CRUD + seed de clientes
     users/          # seedAdmin (cria admin com custom claims)
-  lib/
+  lib2/
     auth.ts         # requireAuth / requireClaims
     errors.ts       # AppError + handleError
     firestore.ts    # admin.initializeApp + db
+    options.ts      # região + opções padrão das functions
+    secrets.ts      # SEED_KEY / ADMIN_PASSWORD
 
 mobile/src/
   app/              # Rotas Expo Router

@@ -5,18 +5,16 @@ import { ALL_CLIENT_CLAIMS, type User } from './users.schema';
 export interface SeedAdminResult {
   uid: string;
   email: string;
-  password: string;
   created: boolean;
   message: string;
 }
 
-const DEFAULT_ADMIN = {
+const ADMIN_PROFILE = {
   email: 'admin@sebrae.com',
-  password: 'sebrae@123',
   name: 'Administrador Sebrae',
 };
 
-export async function seedAdmin(): Promise<SeedAdminResult> {
+export async function seedAdmin(password: string): Promise<SeedAdminResult> {
   const auth = getAuth();
   const claims = [...ALL_CLIENT_CLAIMS];
   const role = 'admin';
@@ -25,13 +23,13 @@ export async function seedAdmin(): Promise<SeedAdminResult> {
   let created = false;
 
   try {
-    const existing = await auth.getUserByEmail(DEFAULT_ADMIN.email);
+    const existing = await auth.getUserByEmail(ADMIN_PROFILE.email);
     uid = existing.uid;
   } catch {
     const newUser = await auth.createUser({
-      email: DEFAULT_ADMIN.email,
-      password: DEFAULT_ADMIN.password,
-      displayName: DEFAULT_ADMIN.name,
+      email: ADMIN_PROFILE.email,
+      password,
+      displayName: ADMIN_PROFILE.name,
       emailVerified: true,
     });
     uid = newUser.uid;
@@ -44,8 +42,8 @@ export async function seedAdmin(): Promise<SeedAdminResult> {
   const existingDoc = await repo.findByUid(uid);
   const user: User = {
     uid,
-    name: DEFAULT_ADMIN.name,
-    email: DEFAULT_ADMIN.email,
+    name: ADMIN_PROFILE.name,
+    email: ADMIN_PROFILE.email,
     role,
     claims,
     createdAt: existingDoc?.createdAt ?? now,
@@ -55,11 +53,10 @@ export async function seedAdmin(): Promise<SeedAdminResult> {
 
   return {
     uid,
-    email: DEFAULT_ADMIN.email,
-    password: DEFAULT_ADMIN.password,
+    email: ADMIN_PROFILE.email,
     created,
     message: created
-      ? 'Admin criado. Use as credenciais retornadas para entrar.'
+      ? 'Admin criado. Use a senha configurada no secret ADMIN_PASSWORD para entrar.'
       : 'Admin já existia. Claims e documento atualizados.',
   };
 }

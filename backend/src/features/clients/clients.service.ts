@@ -24,19 +24,23 @@ export async function list(query: ListClientsQuery): Promise<ListClientsResponse
 }
 
 export async function create(input: CreateClientInput, auth: AuthContext) {
-  const exists = await repo.findByDocument(input.document);
-  if (exists) {
+  const client = await repo.create({ ...input, createdBy: auth.uid });
+  if (!client) {
     throw new AppError('CLIENT_DUPLICATED', 'Já existe um cliente com este documento', {
       document: ['Documento já cadastrado'],
     });
   }
-  return repo.create({ ...input, createdBy: auth.uid });
+  return client;
 }
 
 export async function update(id: string, input: Partial<CreateClientInput>) {
-  const current = await repo.findById(id);
-  if (!current) throw new AppError('CLIENT_NOT_FOUND', 'Cliente não encontrado');
-  await repo.update(id, input);
+  const result = await repo.update(id, input);
+  if (result === 'not_found') throw new AppError('CLIENT_NOT_FOUND', 'Cliente não encontrado');
+  if (result === 'duplicated') {
+    throw new AppError('CLIENT_DUPLICATED', 'Já existe um cliente com este documento', {
+      document: ['Documento já cadastrado'],
+    });
+  }
 }
 
 export async function remove(id: string) {

@@ -11,7 +11,7 @@ import {
     InputIcon,
     InputSlot,
 } from '@/components/ui/input';
-import { ElementType, useState, useEffect } from 'react';
+import { ElementType, useState } from 'react';
 import {
     Control,
     Controller,
@@ -37,42 +37,36 @@ type InputKeyboardType =
 
 type MaskType = 'cpf' | 'cnpj' | 'phone' | 'cpf-cnpj' | 'cep' | 'date' | 'currency';
 
+const maskCpf = (numbers: string): string =>
+  numbers
+    .slice(0, 11)
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+
+const maskCnpj = (numbers: string): string =>
+  numbers
+    .slice(0, 14)
+    .replace(/(\d{2})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1/$2')
+    .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+
 const applyMask = (value: string, maskType?: MaskType): string => {
   if (!maskType) return value;
-  
+
   const numbers = value.replace(/\D/g, '');
-  
+
   switch (maskType) {
     case 'cpf':
-      return numbers
-        .slice(0, 11)
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-    
+      return maskCpf(numbers);
+
     case 'cnpj':
-      return numbers
-        .slice(0, 14)
-        .replace(/(\d{2})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d)/, '$1/$2')
-        .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
-    
+      return maskCnpj(numbers);
+
     case 'cpf-cnpj':
-      if (numbers.length <= 11) {
-        return numbers
-          .slice(0, 11)
-          .replace(/(\d{3})(\d)/, '$1.$2')
-          .replace(/(\d{3})(\d)/, '$1.$2')
-          .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-      }
-      return numbers
-        .slice(0, 14)
-        .replace(/(\d{2})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d)/, '$1/$2')
-        .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
-    
+      return numbers.length <= 11 ? maskCpf(numbers) : maskCnpj(numbers);
+
     case 'phone':
       return numbers
         .slice(0, 11)
@@ -147,7 +141,6 @@ export function Input<T extends FieldValues>({
   labelSize = "md"
 }: InputProps<T>) {
   const [showPassword, setShowPassword] = useState(false);
-  const [localPasswordValue, setLocalPasswordValue] = useState('');
 
   const handleTogglePassword = () => {
     setShowPassword((prev) => !prev);
@@ -161,28 +154,17 @@ export function Input<T extends FieldValues>({
         const errorMessage = fieldState.error?.message;
         const showHelper = errorMessage ?? helperText ?? helperTextNode;
 
-        // Sync local password value with field value (for form reset)
-        useEffect(() => {
-          if (type === 'password') {
-            const fieldValueStr = String(field.value ?? '');
-            if (fieldValueStr !== localPasswordValue) {
-              setLocalPasswordValue(fieldValueStr);
-            }
-          }
-        }, [field.value, type]);
-
         const handleChangeText = (text: string) => {
           if (type === 'password') {
-            setLocalPasswordValue(text);
             field.onChange(text);
             return;
           }
-          
+
           const maskedValue = applyMask(text, mask);
           field.onChange(maskedValue);
         };
 
-        const displayValue = type === 'password' ? localPasswordValue : String(field.value ?? '');
+        const displayValue = String(field.value ?? '');
 
         return (
           <FormControl size={inputSize}>

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+// Mantenha em sincronia com mobile/src/features/clients/schemas/clients.schema.ts
+
 export const ClientSchema = z.object({
   id: z.string(),
   name: z.string().min(1, { message: 'Nome é obrigatório' }),
@@ -27,7 +29,9 @@ export const ListClientsQuerySchema = z.object({
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
-  isActive: z.coerce.boolean().optional(),
+  isActive: z
+    .union([z.boolean(), z.enum(['true', 'false']).transform((v) => v === 'true')])
+    .optional(),
 });
 
 export const PaginationSchema = z.object({
@@ -42,6 +46,13 @@ export const PaginationSchema = z.object({
 export const ListClientsResponseSchema = z.object({
   items: z.array(ClientSchema),
   pagination: PaginationSchema,
+});
+
+export const OkResponseSchema = z.object({ ok: z.literal(true) });
+
+export const SeedClientsResponseSchema = z.object({
+  created: z.number(),
+  skipped: z.boolean(),
 });
 
 export type Client = z.infer<typeof ClientSchema>;

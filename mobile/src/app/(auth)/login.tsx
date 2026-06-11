@@ -57,7 +57,7 @@ export default function SignInScreen() {
 
   const { handleSubmit, control } = useForm<SignInFormData>({
     resolver: zodResolver(SignInSchema),
-    defaultValues: { email: 'admin@sebrae.com', password: 'sebrae@123' },
+    defaultValues: { email: '', password: '' },
   });
 
   const onSubmit = async ({ email, password }: SignInFormData) => {

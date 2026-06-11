@@ -1,4 +1,5 @@
 import { HttpsError } from 'firebase-functions/v2/https';
+import * as logger from 'firebase-functions/logger';
 import { ZodError } from 'zod';
 
 export class AppError extends Error {
@@ -43,6 +44,6 @@ export function handleError(err: unknown): HttpsError {
     });
   }
 
-  const message = err instanceof Error ? err.message : 'Erro inesperado';
-  return new HttpsError('internal', message);
+  logger.error('Erro não tratado', err);
+  return new HttpsError('internal', 'Erro inesperado');
 }

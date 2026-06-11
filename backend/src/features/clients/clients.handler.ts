@@ -5,13 +5,12 @@ import {
   UpdateClientSchema,
   ListClientsQuerySchema,
 } from './clients.schema';
-import { requireAuth } from '../../lib2/auth';
+import { requireAuth, requireClaims } from '../../lib2/auth';
 import { handleError } from '../../lib2/errors';
+import { CALL_OPTIONS } from '../../lib2/options';
 import * as service from './clients.service';
 
-const region = 'southamerica-east1';
-
-export const listClients = onCall({ region }, async (request) => {
+export const listClients = onCall(CALL_OPTIONS, async (request) => {
   try {
     requireAuth(request);
     const query = ListClientsQuerySchema.parse(request.data ?? {});
@@ -21,9 +20,9 @@ export const listClients = onCall({ region }, async (request) => {
   }
 });
 
-export const createClient = onCall({ region }, async (request) => {
+export const createClient = onCall(CALL_OPTIONS, async (request) => {
   try {
-    const auth = requireAuth(request);
+    const auth = requireClaims(request, ['create_clients']);
     const input = CreateClientSchema.parse(request.data);
     return await service.create(input, auth);
   } catch (err) {
@@ -36,9 +35,9 @@ const UpdateClientPayloadSchema = z.object({
   data: UpdateClientSchema,
 });
 
-export const updateClient = onCall({ region }, async (request) => {
+export const updateClient = onCall(CALL_OPTIONS, async (request) => {
   try {
-    requireAuth(request);
+    requireClaims(request, ['update_clients']);
     const { id, data } = UpdateClientPayloadSchema.parse(request.data);
     await service.update(id, data);
     return { ok: true };
@@ -47,9 +46,9 @@ export const updateClient = onCall({ region }, async (request) => {
   }
 });
 
-export const deleteClient = onCall({ region }, async (request) => {
+export const deleteClient = onCall(CALL_OPTIONS, async (request) => {
   try {
-    requireAuth(request);
+    requireClaims(request, ['delete_clients']);
     const { id } = z.object({ id: z.string().min(1) }).parse(request.data);
     await service.remove(id);
     return { ok: true };
@@ -58,9 +57,9 @@ export const deleteClient = onCall({ region }, async (request) => {
   }
 });
 
-export const seedClients = onCall({ region }, async (request) => {
+export const seedClients = onCall(CALL_OPTIONS, async (request) => {
   try {
-    const auth = requireAuth(request);
+    const auth = requireClaims(request, ['create_clients']);
     return await service.seed(auth);
   } catch (err) {
     throw handleError(err);
