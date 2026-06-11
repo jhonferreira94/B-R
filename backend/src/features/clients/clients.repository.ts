@@ -1,5 +1,9 @@
-import { db } from '../../lib2/firestore';
-import type { Client, CreateClientInput, ListClientsQuery } from './clients.schema';
+import { db } from "../../firebase/firestore";
+import type {
+  Client,
+  CreateClientInput,
+  ListClientsQuery,
+} from "./clients.schema";
 
 const COLLECTION = 'clients';
 const BATCH_LIMIT = 500;
@@ -18,10 +22,12 @@ export async function findById(id: string): Promise<Client | null> {
   return toClient(snap.id, snap.data()!);
 }
 
-export async function list(query: ListClientsQuery): Promise<{ items: Client[]; total: number }> {
+export async function list(
+  query: ListClientsQuery,
+): Promise<{ items: Client[]; total: number }> {
   let ref: FirebaseFirestore.Query = db.collection(COLLECTION);
   if (query.isActive !== undefined) {
-    ref = ref.where('isActive', '==', query.isActive);
+    ref = ref.where("isActive", "==", query.isActive);
   }
 
   if (query.search) {

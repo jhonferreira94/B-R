@@ -1,5 +1,5 @@
-import { onCall } from 'firebase-functions/v2/https';
-import { z } from 'zod';
+import { onCall } from "firebase-functions/v2/https";
+import { z } from "zod";
 import {
   CreateClientSchema,
   UpdateClientSchema,
