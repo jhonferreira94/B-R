@@ -1,9 +1,9 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
-import { handleError } from '../../lib2/errors';
-import { CALL_OPTIONS } from '../../lib2/options';
-import { ADMIN_PASSWORD, SEED_KEY } from '../../lib2/secrets';
+import { handleError } from '../../firebase/errors';
+import { CALL_OPTIONS } from '../../firebase/options';
+import { ADMIN_PASSWORD, SEED_KEY } from '../../firebase/secrets';
 import * as service from './users.service';
 
 const SeedAdminPayloadSchema = z.object({

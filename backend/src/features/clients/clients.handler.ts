@@ -5,9 +5,9 @@ import {
   UpdateClientSchema,
   ListClientsQuerySchema,
 } from './clients.schema';
-import { requireAuth, requireClaims } from '../../lib2/auth';
-import { handleError } from '../../lib2/errors';
-import { CALL_OPTIONS } from '../../lib2/options';
+import { requireAuth, requireClaims } from '../../firebase/auth';
+import { handleError } from '../../firebase/errors';
+import { CALL_OPTIONS } from '../../firebase/options';
 import * as service from './clients.service';
 
 export const listClients = onCall(CALL_OPTIONS, async (request) => {

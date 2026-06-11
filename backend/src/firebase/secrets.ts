@@ -6,7 +6,7 @@ type SecretParam = ReturnType<typeof defineSecret>;
  * Centralize todas as definições de secrets aqui.
  * Uso no handler:
  *
- *   import { SEED_KEY } from '../../lib2/secrets';
+ *   import { SEED_KEY } from '../../firebase/secrets';
  *   export const fn = onCall({ secrets: [SEED_KEY] }, async (req) => {
  *     const key = SEED_KEY.value();
  *   });
