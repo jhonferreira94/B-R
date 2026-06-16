@@ -1,5 +1,4 @@
-import { ScrollView, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { TouchableOpacity, View } from 'react-native';
 import { router } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
 
@@ -7,9 +6,8 @@ import { useAuth } from '@/providers/AuthProvider';
 import { hasPermission } from '@/utils/hasPermission';
 import { KnownClaims, privateRoutes } from '@/constants/routes';
 
-import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
-import { Box } from '@/components/ui/box';
+import { ScreenLayout } from '@/components/layout/screen-layout';
 
 export default function HomeScreen() {
   const { session } = useAuth();
@@ -42,60 +40,50 @@ export default function HomeScreen() {
   );
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-background-50">
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, paddingTop: 16 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="mb-6">
-          <Text size="sm" className="text-typography-500">
-            Olá,
+    <ScreenLayout
+      title={user?.name?.split(' ')[0] ?? 'Usuário'}
+      subtitle="Olá,"
+      contentContainerStyle={{ paddingHorizontal: 0 }}
+    >
+      {!hasAnyPermission ? (
+        <View className="flex-1 items-center justify-center py-20 px-6">
+          <Text className="text-error-600 text-center font-semibold text-lg">
+            Você não tem acesso a nenhum módulo. Fale com o administrador.
           </Text>
-          <Heading size="2xl" className="text-typography-950">
-            {user?.name?.split(' ')[0] ?? 'Usuário'}
-          </Heading>
         </View>
+      ) : (
+        <View className="gap-6">
+          {canListUsers && (
+            <View>
+              <Text size="2xs" className="font-semibold text-typography-500 uppercase mb-2">
+                ADMINISTRAÇÃO
+              </Text>
+              {renderModuleCard(privateRoutes.users.name, privateRoutes.users.path)}
+            </View>
+          )}
 
-        {!hasAnyPermission ? (
-          <View className="flex-1 items-center justify-center py-20 px-6">
-            <Text className="text-error-600 text-center font-semibold text-lg">
-              Você não tem acesso a nenhum módulo. Fale com o administrador.
-            </Text>
-          </View>
-        ) : (
-          <View className="gap-6">
-            {canListUsers && (
-              <View>
-                <Text size="2xs" className="font-semibold text-typography-500 uppercase mb-2">
-                  ADMINISTRAÇÃO
-                </Text>
-                {renderModuleCard(privateRoutes.users.name, privateRoutes.users.path)}
-              </View>
-            )}
+          {(canListApplicators || canListGauges || canListTerminals) && (
+            <View>
+              <Text size="2xs" className="font-semibold text-typography-500 uppercase mb-2">
+                CADASTROS
+              </Text>
+              {canListApplicators && renderModuleCard(privateRoutes.applicators.name, privateRoutes.applicators.path)}
+              {canListGauges && renderModuleCard(privateRoutes.gauges.name, privateRoutes.gauges.path)}
+              {canListTerminals && renderModuleCard(privateRoutes.terminals.name, privateRoutes.terminals.path)}
+            </View>
+          )}
 
-            {(canListApplicators || canListGauges || canListTerminals) && (
-              <View>
-                <Text size="2xs" className="font-semibold text-typography-500 uppercase mb-2">
-                  CADASTROS
-                </Text>
-                {canListApplicators && renderModuleCard(privateRoutes.applicators.name, privateRoutes.applicators.path)}
-                {canListGauges && renderModuleCard(privateRoutes.gauges.name, privateRoutes.gauges.path)}
-                {canListTerminals && renderModuleCard(privateRoutes.terminals.name, privateRoutes.terminals.path)}
-              </View>
-            )}
-
-            {(canListSheets || canListStaplings) && (
-              <View>
-                <Text size="2xs" className="font-semibold text-typography-500 uppercase mb-2">
-                  PRODUÇÃO
-                </Text>
-                {canListSheets && renderModuleCard(privateRoutes.sheets.name, privateRoutes.sheets.path)}
-                {canListStaplings && renderModuleCard(privateRoutes.staplings.name, privateRoutes.staplings.path)}
-              </View>
-            )}
-          </View>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+          {(canListSheets || canListStaplings) && (
+            <View>
+              <Text size="2xs" className="font-semibold text-typography-500 uppercase mb-2">
+                PRODUÇÃO
+              </Text>
+              {canListSheets && renderModuleCard(privateRoutes.sheets.name, privateRoutes.sheets.path)}
+              {canListStaplings && renderModuleCard(privateRoutes.staplings.name, privateRoutes.staplings.path)}
+            </View>
+          )}
+        </View>
+      )}
+    </ScreenLayout>
   );
 }

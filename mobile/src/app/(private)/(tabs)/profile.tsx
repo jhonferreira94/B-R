@@ -1,14 +1,13 @@
+import { View } from 'react-native';
 import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/providers/AuthProvider';
+import { ScreenLayout } from '@/components/layout/screen-layout';
 import { Box } from '@/components/ui/box';
 import { VStack } from '@/components/ui/vstack';
 import { HStack } from '@/components/ui/hstack';
-import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
 import { Divider } from '@/components/ui/divider';
 import { Button } from '@/components/layout/button';
-import { NAVIGATION_BAR_HEIGHT } from '@/components/navigation/navigation-bar';
 
 export default function ProfileScreen() {
   const { session, logout } = useAuth();
@@ -19,13 +18,12 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-background-0 px-4">
+    <ScreenLayout
+      title="Perfil"
+      contentContainerStyle={{ paddingHorizontal: 0, flexGrow: 1 }}
+    >
       <VStack className="flex-1">
-        <Heading size="2xl" className="text-typography-950 mt-4 mb-6">
-          Perfil
-        </Heading>
-
-        <Box className="rounded-xl border border-outline-200 p-4">
+        <Box className="rounded-xl border border-outline-200 p-4 bg-background-0">
           <HStack className="items-center justify-between">
             <VStack>
               <Text size="xs" className="text-typography-500 uppercase tracking-wider">
@@ -47,7 +45,7 @@ export default function ProfileScreen() {
           </VStack>
         </Box>
 
-        <VStack style={{ flex: 1, justifyContent: 'flex-end', paddingBottom: NAVIGATION_BAR_HEIGHT }}>
+        <View className="flex-1 justify-end mt-12">
           <Button
             labelText="Sair do aplicativo"
             classNameButtonText="text-error-600 font-semibold"
@@ -56,8 +54,8 @@ export default function ProfileScreen() {
             buttonTextSize="md"
             onPress={handleLogout}
           />
-        </VStack>
+        </View>
       </VStack>
-    </SafeAreaView>
+    </ScreenLayout>
   );
 }
