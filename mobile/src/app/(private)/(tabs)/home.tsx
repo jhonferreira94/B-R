@@ -1,142 +1,101 @@
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl } from 'react-native';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useClientsInfinite, useSeedClients } from '@/features/clients';
+import { router } from 'expo-router';
+import { ChevronRight } from 'lucide-react-native';
+
 import { useAuth } from '@/providers/AuthProvider';
 import { hasPermission } from '@/utils/hasPermission';
-import { KnownClaims } from '@/constants/routes';
-import { useDebounce } from '@/hooks/useDebounce';
-import { SearchInput } from '@/components/forms/search-input';
-import { Box } from '@/components/ui/box';
-import { VStack } from '@/components/ui/vstack';
-import { HStack } from '@/components/ui/hstack';
+import { KnownClaims, privateRoutes } from '@/constants/routes';
+
 import { Heading } from '@/components/ui/heading';
 import { Text } from '@/components/ui/text';
-import { Spinner } from '@/components/ui/spinner';
-import { Button } from '@/components/layout/button';
-import { NAVIGATION_BAR_HEIGHT } from '@/components/navigation/navigation-bar';
-import type { Client } from '@/features/clients/schemas/clients.schema';
+import { Box } from '@/components/ui/box';
 
 export default function HomeScreen() {
   const { session } = useAuth();
+  const user = session?.user;
 
-  const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 400);
+  const canListUsers = hasPermission(user, [KnownClaims.list_users]);
+  const canListApplicators = hasPermission(user, [KnownClaims.list_applicators]);
+  const canListGauges = hasPermission(user, [KnownClaims.list_gauges]);
+  const canListTerminals = hasPermission(user, [KnownClaims.list_terminals]);
+  const canListSheets = hasPermission(user, [KnownClaims.list_sheets]);
+  const canListStaplings = hasPermission(user, [KnownClaims.list_staplings]);
 
-  const {
-    data,
-    isLoading,
-    isError,
-    isRefetching,
-    refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useClientsInfinite({ search: debouncedSearch || undefined, pageSize: 10 });
+  const hasAnyPermission =
+    canListUsers ||
+    canListApplicators ||
+    canListGauges ||
+    canListTerminals ||
+    canListSheets ||
+    canListStaplings;
 
-  const seedClients = useSeedClients();
-  const canSeed = hasPermission(session?.user, [KnownClaims.create_clients]);
-
-  const items: Client[] = useMemo(
-    () => data?.pages.flatMap((p) => p.items) ?? [],
-    [data],
+  const renderModuleCard = (title: string, path: string) => (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() => router.push(path as any)}
+      className="flex-row items-center justify-between rounded-lg border border-outline-200 bg-background-0 px-4 py-4 mb-3 shadow-sm shadow-background-900/5"
+    >
+      <Text className="font-semibold text-typography-950">{title}</Text>
+      <ChevronRight size={20} color="#64748B" />
+    </TouchableOpacity>
   );
 
-  const total = data?.pages[0]?.pagination.total ?? 0;
-
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-background-0">
-      <VStack className="px-4 pt-2 pb-3 gap-3">
-        <HStack className="items-center justify-between">
-          <VStack>
-            <Text size="sm" className="text-typography-500">
-              Olá,
-            </Text>
-            <Heading size="xl" className="text-typography-950">
-              {session?.user.name?.split(' ')[0] ?? 'Usuário'}
-            </Heading>
-          </VStack>
+    <SafeAreaView edges={['top']} className="flex-1 bg-background-50">
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100, paddingTop: 16 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="mb-6">
           <Text size="sm" className="text-typography-500">
-            {total} {total === 1 ? 'cliente' : 'clientes'}
+            Olá,
           </Text>
-        </HStack>
+          <Heading size="2xl" className="text-typography-950">
+            {user?.name?.split(' ')[0] ?? 'Usuário'}
+          </Heading>
+        </View>
 
-        <SearchInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Buscar por nome, e-mail ou documento"
-        />
-      </VStack>
+        {!hasAnyPermission ? (
+          <View className="flex-1 items-center justify-center py-20 px-6">
+            <Text className="text-error-600 text-center font-semibold text-lg">
+              Você não tem acesso a nenhum módulo. Fale com o administrador.
+            </Text>
+          </View>
+        ) : (
+          <View className="gap-6">
+            {canListUsers && (
+              <View>
+                <Text size="2xs" className="font-semibold text-typography-500 uppercase mb-2">
+                  ADMINISTRAÇÃO
+                </Text>
+                {renderModuleCard(privateRoutes.users.name, privateRoutes.users.path)}
+              </View>
+            )}
 
-      {isLoading ? (
-        <Box className="flex-1 items-center justify-center">
-          <Spinner />
-        </Box>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: NAVIGATION_BAR_HEIGHT + 24, gap: 8 }}
-          refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-          }
-          onEndReached={() => {
-            if (hasNextPage && !isFetchingNextPage) fetchNextPage();
-          }}
-          onEndReachedThreshold={0.5}
-          renderItem={({ item }) => (
-            <VStack className="rounded-lg border border-outline-200 bg-background-0 p-3">
-              <Text className="font-semibold text-typography-950">{item.name}</Text>
-              <Text size="sm" className="text-typography-500 mt-1">
-                {item.email}
-              </Text>
-              <Text size="xs" className="text-typography-400 mt-1">
-                {item.document}
-              </Text>
-            </VStack>
-          )}
-          ListFooterComponent={
-            isFetchingNextPage ? (
-              <Box className="py-4 items-center">
-                <ActivityIndicator />
-              </Box>
-            ) : null
-          }
-          ListEmptyComponent={
-            isError ? (
-              <VStack className="items-center gap-3 mt-10 px-6">
-                <Text className="text-typography-500 text-center">
-                  Não foi possível carregar os clientes.
+            {(canListApplicators || canListGauges || canListTerminals) && (
+              <View>
+                <Text size="2xs" className="font-semibold text-typography-500 uppercase mb-2">
+                  CADASTROS
                 </Text>
-                <Button
-                  labelText="Tentar novamente"
-                  buttonSize="md"
-                  buttonTextSize="md"
-                  onPress={() => refetch()}
-                />
-              </VStack>
-            ) : (
-              <VStack className="items-center gap-3 mt-10 px-6">
-                <Text className="text-typography-500 text-center">
-                  {debouncedSearch
-                    ? 'Nenhum cliente encontrado para essa busca.'
-                    : 'Nenhum cliente cadastrado ainda.'}
+                {canListApplicators && renderModuleCard(privateRoutes.applicators.name, privateRoutes.applicators.path)}
+                {canListGauges && renderModuleCard(privateRoutes.gauges.name, privateRoutes.gauges.path)}
+                {canListTerminals && renderModuleCard(privateRoutes.terminals.name, privateRoutes.terminals.path)}
+              </View>
+            )}
+
+            {(canListSheets || canListStaplings) && (
+              <View>
+                <Text size="2xs" className="font-semibold text-typography-500 uppercase mb-2">
+                  PRODUÇÃO
                 </Text>
-                {!debouncedSearch && canSeed && (
-                  <Button
-                    labelText="Gerar clientes de exemplo"
-                    buttonSize="md"
-                    buttonTextSize="md"
-                    isLoading={seedClients.isPending}
-                    isDisabled={seedClients.isPending}
-                    onPress={() => seedClients.mutate()}
-                  />
-                )}
-              </VStack>
-            )
-          }
-        />
-      )}
+                {canListSheets && renderModuleCard(privateRoutes.sheets.name, privateRoutes.sheets.path)}
+                {canListStaplings && renderModuleCard(privateRoutes.staplings.name, privateRoutes.staplings.path)}
+              </View>
+            )}
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }

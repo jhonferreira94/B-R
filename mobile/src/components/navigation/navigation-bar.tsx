@@ -35,7 +35,7 @@ export function NavigationBar({
 
   return (
     <View
-      className="absolute bottom-6 self-center h-[68px] rounded-[100px] border border-background-50 overflow-hidden bg-primary-50 px-4"
+      className="absolute bottom-6 self-center h-[68px] rounded-[100px] border border-outline-100 overflow-hidden bg-background-0 shadow-md shadow-background-900/10 px-4"
       pointerEvents="box-none"
     >
       <View className="flex-1 flex-row items-center justify-center gap-2 px-2">

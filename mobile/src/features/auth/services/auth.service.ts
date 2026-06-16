@@ -31,3 +31,14 @@ export async function signUp({ name, email, password }: SignUpInput): Promise<vo
 export async function sendPasswordReset(email: string): Promise<void> {
   await sendPasswordResetEmail(auth, email);
 }
+
+export async function changePassword({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }): Promise<void> {
+  const user = auth.currentUser;
+  if (!user || !user.email) throw new Error('Usuário não autenticado.');
+
+  const { EmailAuthProvider, reauthenticateWithCredential, updatePassword } = await import('firebase/auth');
+  const credential = EmailAuthProvider.credential(user.email, currentPassword);
+  
+  await reauthenticateWithCredential(user, credential);
+  await updatePassword(user, newPassword);
+}

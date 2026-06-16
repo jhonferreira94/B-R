@@ -39,3 +39,21 @@ export const ResetPasswordSchema = z.object({
 });
 
 export type ResetPasswordFormData = z.infer<typeof ResetPasswordSchema>;
+
+export const ChangePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, { message: 'Senha atual obrigatória' }),
+    newPassword: z
+      .string()
+      .min(8, { message: 'Mínimo de 8 caracteres' })
+      .regex(/[A-Z]/, { message: 'Pelo menos uma letra maiúscula' })
+      .regex(/[a-z]/, { message: 'Pelo menos uma letra minúscula' })
+      .regex(/[0-9]/, { message: 'Pelo menos um dígito numérico' }),
+    confirmNewPassword: z.string().min(1, { message: 'Confirme a nova senha' }),
+  })
+  .refine((data) => data.newPassword === data.confirmNewPassword, {
+    path: ['confirmNewPassword'],
+    message: 'As senhas não conferem',
+  });
+
+export type ChangePasswordFormData = z.infer<typeof ChangePasswordSchema>;
